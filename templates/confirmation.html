@@ -20,6 +20,14 @@
                 <span class="value">{{ flag }} {{ country }}</span>
             </div>
             <div class="detail-item">
+                <span class="label">Phone</span>
+                <span class="value">{{ phone_prefix }} {{ phone }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Mobile Money</span>
+                <span class="value">{{ mobile_money }}</span>
+            </div>
+            <div class="detail-item">
                 <span class="label">Amount Requested</span>
                 <span class="value">{{ currency_symbol }} {{ "%.2f"|format(amount) }}</span>
             </div>
@@ -47,7 +55,7 @@
         <ul>
             <li>✅ Our team will review your application</li>
             <li>📞 You'll receive a call within 1 hour</li>
-            <li>💰 Upon approval, money sent to your mobile money</li>
+            <li>💰 Upon approval, money sent to your {{ mobile_money }}</li>
         </ul>
     </div>
     

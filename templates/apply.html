@@ -23,7 +23,7 @@
                 <option value="">-- Select Country --</option>
                 {% for key, country in countries.items() %}
                 <option value="{{ key }}" {% if request.form.country == key %}selected{% endif %}>
-                    {{ country.flag }} {{ country.name }} ({{ country.currency }})
+                    {{ country.flag }} {{ country.name }} ({{ country.phone_prefix }})
                 </option>
                 {% endfor %}
             </select>
@@ -66,22 +66,4 @@
         }
     });
 </script>
-
-<style>
-    .country-select {
-        width: 100%;
-        padding: 0.8rem;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        font-size: 1rem;
-        background: white;
-        cursor: pointer;
-    }
-    
-    .country-select:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-</style>
 {% endblock %}
