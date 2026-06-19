@@ -1,0 +1,87 @@
+// static/js/main.js
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-dismiss alerts after 5 seconds
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.transition = 'opacity 0.5s';
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 500);
+        }, 5000);
+    });
+
+    // Phone number formatting
+    const phoneInputs = document.querySelectorAll('input[type="tel"]');
+    phoneInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            // Remove non-numeric characters
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    });
+
+    // OTP input - auto advance
+    const otpInputs = document.querySelectorAll('.otp-input');
+    otpInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.value.length === this.maxLength) {
+                this.form.querySelector('button[type="submit"]')?.focus();
+            }
+        });
+    });
+
+    // Amount input validation
+    const amountInput = document.getElementById('loan_amount');
+    if (amountInput) {
+        amountInput.addEventListener('blur', function() {
+            const min = parseInt(this.min) || 0;
+            const max = parseInt(this.max) || 50000;
+            const value = parseInt(this.value) || 0;
+            
+            if (value < min) {
+                this.value = min;
+            } else if (value > max) {
+                this.value = max;
+            }
+        });
+    }
+});
+
+// Utility function to format currency
+function formatCurrency(amount) {
+    return 'KES ' + amount.toLocaleString('en-KE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+// Utility function to validate phone number
+function validatePhone(phone) {
+    const clean = phone.replace(/[^0-9]/g, '');
+    return clean.length >= 7 && clean.length <= 15;
+}
+
+// Utility function to show loading state
+function showLoading(button) {
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner">⏳</span> Processing...';
+    return () => {
+        button.disabled = false;
+        button.textContent = originalText;
+    };
+}
+
+// Add smooth scrolling for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            e.preventDefault();
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+}); 

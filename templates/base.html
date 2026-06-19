@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LendPlus{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="top-bar">
+        <span>📞 {{ support_phone|default('0709-029-000') }}</span>
+        <span>Mon-Sun: 8am - 6pm</span>
+    </div>
+    
+    <nav class="navbar">
+        <div class="logo">LendPlus</div>
+        <div class="nav-links">
+            <a href="/#advantages">Our advantages</a>
+            <a href="/how-to-borrow">How to borrow</a>
+            <a href="/#loan-app">Loan App</a>
+            <a href="/#promotions">Promotions</a>
+            <a href="/dashboard" class="login-btn">Log in</a>
+        </div>
+    </nav>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <h4>Support service</h4>
+                    <p>📞 {{ support_phone|default('+254 709 029 000') }}</p>
+                    <p>Mon-Sun: 8am - 6pm</p>
+                </div>
+                <div>
+                    <h4>Mail Addresses</h4>
+                    <p>📧 {{ support_email|default('customer@lendplus.ke') }}</p>
+                    <p>Application acceptance 24/7</p>
+                </div>
+                <div>
+                    <h4>Quick Links</h4>
+                    <a href="/privacy">Privacy policy</a><br>
+                    <a href="/terms">Terms and conditions</a>
+                </div>
+            </div>
+            <hr>
+            <p class="copyright">
+                © 2021-2026 ALL RIGHTS RESERVED. 
+                {{ company_name|default('AVENTUS TECHNOLOGY LIMITED') }}
+            </p>
+        </div>
+    </footer>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

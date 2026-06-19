@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Loan Amount - LendPlus{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="progress-bar">
+        <div class="fill" style="width: 100%;"></div>
+    </div>
+    <div class="progress-text">Step 4 of 4</div>
+    
+    <h2>How much do you need?</h2>
+    <p>Choose an amount between KES {{ min_loan|default(1000)|format_number }} and KES {{ max_loan|default(50000)|format_number }}</p>
+    
+    {% if error %}
+    <div class="alert error">{{ error }}</div>
+    {% endif %}
+    
+    <form method="POST">
+        <div class="amount-options">
+            <button type="button" class="amount-btn" onclick="setAmount(5000)">KES 5,000</button>
+            <button type="button" class="amount-btn" onclick="setAmount(10000)">KES 10,000</button>
+            <button type="button" class="amount-btn" onclick="setAmount(20000)">KES 20,000</button>
+            <button type="button" class="amount-btn" onclick="setAmount(30000)">KES 30,000</button>
+        </div>
+        
+        <div class="custom-amount">
+            <label><strong>Or enter custom amount</strong></label>
+            <input type="number" name="loan_amount" id="loan_amount" 
+                   placeholder="Enter amount" min="1000" max="50000" 
+                   value="{{ request.form.loan_amount or '' }}" required>
+        </div>
+        
+        <div class="loan-info">
+            <div class="info-row">
+                <span>Interest rate:</span>
+                <span><span id="interest_display">5</span>%</span>
+            </div>
+            <div class="info-row">
+                <span>Repayment period:</span>
+                <span><span id="months_display">1</span> month(s)</span>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn-primary">Apply Now</button>
+    </form>
+</div>
+
+<script>
+    const loanInput = document.getElementById('loan_amount');
+    const interestDisplay = document.getElementById('interest_display');
+    const monthsDisplay = document.getElementById('months_display');
+    
+    loanInput.addEventListener('input', function() {
+        const amount = parseInt(this.value) || 0;
+        let rate = 5, months = 1;
+        
+        if (amount > 30000) {
+            rate = 12;
+            months = 6;
+        } else if (amount > 10000) {
+            rate = 8;
+            months = 3;
+        }
+        
+        interestDisplay.textContent = rate;
+        monthsDisplay.textContent = months;
+    });
+    
+    function setAmount(amount) {
+        document.getElementById('loan_amount').value = amount;
+        // Trigger the input event
+        const event = new Event('input');
+        loanInput.dispatchEvent(event);
+        // Highlight selected button
+        document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+</script>
+{% endblock %}

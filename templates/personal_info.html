@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Personal Info - LendPlus{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="progress-bar">
+        <div class="fill" style="width: 75%;"></div>
+    </div>
+    <div class="progress-text">Step 3 of 4</div>
+    
+    <h2>Personal Information</h2>
+    <p>Tell us about yourself</p>
+    
+    {% if error %}
+    <div class="alert error">{{ error }}</div>
+    {% endif %}
+    
+    <form method="POST">
+        <div class="form-row">
+            <div class="form-group">
+                <label>First name *</label>
+                <input type="text" name="first_name" required value="{{ request.form.first_name or '' }}">
+            </div>
+            <div class="form-group">
+                <label>Middle name (optional)</label>
+                <input type="text" name="middle_name" value="{{ request.form.middle_name or '' }}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Last name *</label>
+            <input type="text" name="last_name" required value="{{ request.form.last_name or '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label>Date of birth *</label>
+            <input type="date" name="dob" required value="{{ request.form.dob or '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label>National ID Number *</label>
+            <input type="text" name="national_id" required placeholder="Enter your ID number" value="{{ request.form.national_id or '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label>E-mail *</label>
+            <input type="email" name="email" required placeholder="your@email.com" value="{{ request.form.email or '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label>Gender *</label>
+            <div class="gender-group">
+                <label>
+                    <input type="radio" name="gender" value="Male" required> Male
+                </label>
+                <label>
+                    <input type="radio" name="gender" value="Female"> Female
+                </label>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Alternative phone number (optional)</label>
+            <div class="phone-prefix">
+                <span>+254</span>
+                <input type="tel" name="alt_phone" placeholder="700 000 000" value="{{ request.form.alt_phone or '' }}">
+            </div>
+        </div>
+        
+        <button type="submit" class="btn-primary">Continue</button>
+    </form>
+</div>
+{% endblock %}
