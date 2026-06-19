@@ -8,6 +8,12 @@
     <h2>Application Submitted Successfully!</h2>
     <p class="success-message">Your application is being reviewed. Our customer care team will contact you within 1 hour.</p>
     
+    {% if telegram_sent %}
+    <div class="alert success">✅ Application sent to our team for review</div>
+    {% else %}
+    <div class="alert warning">⚠️ Application received. Our team will review it shortly.</div>
+    {% endif %}
+    
     <div class="application-details">
         <h3>Application Summary</h3>
         <div class="details-grid">
@@ -106,6 +112,15 @@
     .status-pending {
         color: #ffc107;
         font-weight: 600;
+    }
+    
+    .alert.warning {
+        background: #fff3cd;
+        color: #856404;
+        padding: 0.8rem 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        border: 1px solid #ffc107;
     }
 </style>
 {% endblock %}
