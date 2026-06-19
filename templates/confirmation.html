@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Application Submitted - LendPlus{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="success-icon">✅</div>
+    <h2>Application Submitted!</h2>
+    <p>Your loan application has been received. You'll get a decision in 15 minutes.</p>
+    
+    <div class="application-details">
+        <div class="details-grid">
+            <div class="detail-item">
+                <span class="label">Application ID</span>
+                <span class="value">{{ application_id }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Amount</span>
+                <span class="value">KES {{ amount|int|format_number }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Interest</span>
+                <span class="value">KES {{ interest|int|format_number }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Total Repayment</span>
+                <span class="value highlight">KES {{ total|int|format_number }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Term</span>
+                <span class="value">{{ months }} month(s)</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Status</span>
+                <span class="value status-pending">⏳ Pending Review</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="success-actions">
+        <a href="/" class="btn-secondary">Back to Home</a>
+        <a href="/dashboard" class="btn-primary">Go to Dashboard</a>
+    </div>
+    
+    <div class="support-info">
+        <p>Need help? Contact us at <strong>{{ support_phone|default('0709-029-000') }}</strong></p>
+    </div>
+</div>
+{% endblock %}

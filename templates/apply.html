@@ -5,18 +5,18 @@
 {% block content %}
 <div class="form-container">
     <div class="progress-bar">
-        <div class="fill" style="width: 25%;"></div>
+        <div class="fill" style="width: 33%;"></div>
     </div>
-    <div class="progress-text">Step 1 of 4</div>
+    <div class="progress-text">Step 1 of 3</div>
     
     <h2>Enter your phone number</h2>
-    <p>We'll send a verification code to this number</p>
+    <p>We'll use this to contact you about your loan</p>
     
     {% if error %}
     <div class="alert error">{{ error }}</div>
     {% endif %}
     
-    <form method="POST">
+    <form method="POST" action="{{ url_for('apply') }}">
         <div class="phone-prefix">
             <span>+254</span>
             <input type="tel" name="phone" placeholder="712 734 184" required value="{{ request.form.phone or '' }}">
