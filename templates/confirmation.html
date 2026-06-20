@@ -65,8 +65,15 @@
     </div>
     
     <div class="support-info">
-        <p>📱 Need help? Contact us at <strong>{{ support_phone|default('0739-239-646') }}</strong></p>
-        <p>📧 Or email: <strong>customer@lendplus.ke</strong></p>
+        <p>📱 Need help? Contact us on <strong>WhatsApp</strong>:</p>
+        <p>
+            <a href="{{ support_whatsapp|default('https://wa.me/254739239646') }}" target="_blank" class="whatsapp-btn">
+                💬 Chat with us on WhatsApp
+            </a>
+        </p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+            📧 Or email: <strong>{{ support_email|default('customer@lendplus.ke') }}</strong>
+        </p>
     </div>
 </div>
 
@@ -118,6 +125,22 @@
     .status-pending {
         color: #ffc107;
         font-weight: 600;
+    }
+    
+    .whatsapp-btn {
+        display: inline-block;
+        background: #25D366;
+        color: white;
+        padding: 0.8rem 2rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        margin-top: 0.5rem;
+        transition: background 0.3s;
+    }
+    
+    .whatsapp-btn:hover {
+        background: #1da851;
     }
 </style>
 {% endblock %}

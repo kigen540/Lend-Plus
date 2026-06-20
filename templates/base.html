@@ -10,7 +10,7 @@
 </head>
 <body>
     <div class="top-bar">
-        <span>📞 {{ support_phone|default('0739-239-646') }}</span>
+        <span>📱 <a href="{{ support_whatsapp|default('https://wa.me/254739239646') }}" target="_blank" style="color: white; text-decoration: none;">WhatsApp: {{ support_phone|default('+254739239646') }}</a></span>
         <span>Mon-Sun: 8am - 6pm</span>
     </div>
     
@@ -34,7 +34,9 @@
             <div class="footer-grid">
                 <div>
                     <h4>Support service</h4>
-                    <p>📞 {{ support_phone|default('+254 739 239 646') }}</p>
+                    <p>📱 <a href="{{ support_whatsapp|default('https://wa.me/254739239646') }}" target="_blank" style="color: #667eea; text-decoration: none;">
+                        WhatsApp: {{ support_phone|default('+254739239646') }}
+                    </a></p>
                     <p>Mon-Sun: 8am - 6pm</p>
                 </div>
                 <div>
@@ -56,6 +58,7 @@
         </div>
     </footer>
     
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

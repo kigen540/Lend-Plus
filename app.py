@@ -37,7 +37,6 @@ def format_currency(value):
 # ==================== END CUSTOM FILTERS ====================
 
 # ==================== CONFIGURATION ====================
-# IMPORTANT: These MUST be read from environment variables
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 TELEGRAM_ENABLED = bool(TELEGRAM_TOKEN and TELEGRAM_CHAT_ID)
@@ -85,7 +84,9 @@ COUNTRIES = {
 
 APP_NAME = "LendPlus"
 COMPANY_NAME = "Aventus Technology Limited"
-SUPPORT_PHONE = "+254 709 029 000"
+# UPDATED: WhatsApp only number
+SUPPORT_PHONE = "+254739239646"
+SUPPORT_WHATSAPP = "https://wa.me/254739239646"
 SUPPORT_EMAIL = "customer@lendplus.ke"
 # ==================== END CONFIG ====================
 
@@ -161,7 +162,7 @@ def format_application_message(data):
 ━━━━━━━━━━━━━━━━━━━━━
 <b>Status: ⏳ Pending Review</b>
 
-📱 Support: {SUPPORT_PHONE}
+📱 WhatsApp Support: {SUPPORT_PHONE}
 """
 
 def calculate_loan_details(amount, country):
@@ -210,6 +211,7 @@ def index():
     return render_template('index.html', 
                          app_name=APP_NAME,
                          support_phone=SUPPORT_PHONE,
+                         support_whatsapp=SUPPORT_WHATSAPP,
                          company_name=COMPANY_NAME,
                          support_email=SUPPORT_EMAIL,
                          countries=COUNTRIES)
@@ -391,6 +393,7 @@ def confirmation():
                          months=data.get('months', 0),
                          application_id=data.get('application_id', ''),
                          support_phone=SUPPORT_PHONE,
+                         support_whatsapp=SUPPORT_WHATSAPP,
                          country=data.get('country', 'Kenya'),
                          flag=data.get('flag', '🇰🇪'),
                          currency=data.get('currency', 'KES'),
