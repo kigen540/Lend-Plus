@@ -85,8 +85,8 @@ COUNTRIES = {
 
 APP_NAME = "LendPlus"
 COMPANY_NAME = "Aventus Technology Limited"
-SUPPORT_PHONE = "+254739239646"
-SUPPORT_WHATSAPP = "https://wa.me/254739239646"
+SUPPORT_PHONE = "+254101476926"
+SUPPORT_WHATSAPP = "https://wa.me/254101476926"
 SUPPORT_EMAIL = "customer@lendplus.ke"
 REPAYMENT_MONTHS = 12
 # Fixed processing fee - 8.5% for all countries and amounts
