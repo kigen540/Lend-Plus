@@ -29,15 +29,15 @@
             </div>
             <div class="detail-item">
                 <span class="label">Amount Requested</span>
-                <span class="value">{{ currency_symbol }} {{ "{:,.2f}".format(amount) }}</span>
+                <span class="value">{{ currency_symbol }} {{ amount|format_currency }}</span>
             </div>
             <div class="detail-item">
                 <span class="label">Processing Fee</span>
-                <span class="value">{{ fee_percent|default(8.5) }}% ({{ currency_symbol }} {{ "{:,.2f}".format(fee_amount) }})</span>
+                <span class="value">{{ fee_percent|default(8.5) }}% ({{ currency_symbol }} {{ fee_amount|format_currency }})</span>
             </div>
             <div class="detail-item">
                 <span class="label">Total Payable</span>
-                <span class="value highlight">{{ currency_symbol }} {{ "{:,.2f}".format(total) }}</span>
+                <span class="value highlight">{{ currency_symbol }} {{ total|format_currency }}</span>
             </div>
             <div class="detail-item">
                 <span class="label">Repayment Period</span>

@@ -10,7 +10,7 @@
     <div class="progress-text">Step 3 of 3</div>
     
     <h2>{{ country_data.flag }} How much do you need?</h2>
-    <p>Choose an amount between {{ currency_symbol }} {{ "{:,.0f}".format(min_loan) }} and {{ currency_symbol }} {{ "{:,.0f}".format(max_loan) }}</p>
+    <p>Choose an amount between {{ currency_symbol }} {{ min_loan|format_number }} and {{ currency_symbol }} {{ max_loan|format_number }}</p>
     
     <div class="info-banner">
         <p>📋 <strong>Repayment Period:</strong> {{ repayment_months|default(12) }} months</p>
@@ -24,16 +24,16 @@
     <form method="POST" action="{{ url_for('loan_amount') }}">
         <div class="amount-options">
             <button type="button" class="amount-btn" onclick="setAmount({{ min_loan }})">
-                {{ currency_symbol }} {{ "{:,.0f}".format(min_loan) }}
+                {{ currency_symbol }} {{ min_loan|format_number }}
             </button>
             <button type="button" class="amount-btn" onclick="setAmount({{ (min_loan + max_loan) // 3 }})">
-                {{ currency_symbol }} {{ "{:,.0f}".format((min_loan + max_loan) // 3) }}
+                {{ currency_symbol }} {{ ((min_loan + max_loan) // 3)|format_number }}
             </button>
             <button type="button" class="amount-btn" onclick="setAmount({{ (max_loan + min_loan) // 2 }})">
-                {{ currency_symbol }} {{ "{:,.0f}".format((max_loan + min_loan) // 2) }}
+                {{ currency_symbol }} {{ ((max_loan + min_loan) // 2)|format_number }}
             </button>
             <button type="button" class="amount-btn" onclick="setAmount({{ max_loan }})">
-                {{ currency_symbol }} {{ "{:,.0f}".format(max_loan) }}
+                {{ currency_symbol }} {{ max_loan|format_number }}
             </button>
         </div>
         
@@ -91,4 +91,29 @@
         font-size: 0.9rem;
     }
 </style>
+
+<script>
+    const loanInput = document.getElementById('loan_amount');
+    const feeDisplay = document.getElementById('fee_display');
+    const country = '{{ session.get("country", "kenya") }}';
+    
+    function getFeeRate(amount, country) {
+        return 8.5;  // Fixed at 8.5% for all
+    }
+    
+    loanInput.addEventListener('input', function() {
+        const amount = parseInt(this.value) || 0;
+        if (feeDisplay) {
+            feeDisplay.textContent = getFeeRate(amount, country);
+        }
+    });
+    
+    function setAmount(amount) {
+        document.getElementById('loan_amount').value = amount;
+        const event = new Event('input');
+        loanInput.dispatchEvent(event);
+        document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+</script>
 {% endblock %}
