@@ -14,19 +14,58 @@
                 <p>By submitting a loan application through LendPlus, you agree to the following terms and conditions. All applications are subject to review and approval by LendPlus (Aventus Technology Limited).</p>
             </section>
             
-            <section>
-                <h2>2. Processing Fee</h2>
-                <p><strong>⚠️ Important:</strong> A processing fee of <strong>{{ fee_percent|default('8.5') }}%</strong> of the loan amount is required <strong>before the loan is disbursed</strong>. The loan will only be released upon successful payment of the processing fee.</p>
-                <ul>
-                    <li>The processing fee covers administrative costs, credit checks, and loan processing.</li>
-                    <li>This fee is <strong>non-refundable</strong> once the loan application is processed.</li>
-                    <li>Payment of the processing fee confirms your commitment to the loan agreement.</li>
-                    <li>The processing fee is fixed at <strong>{{ fee_percent|default('8.5') }}%</strong> for all loan amounts and countries.</li>
-                </ul>
+            <section class="processing-fee-section">
+                <h2>💰 2. Processing Fee</h2>
+                
+                <div class="fee-highlight-box">
+                    <div class="fee-icon">⚠️</div>
+                    <div class="fee-content">
+                        <p class="fee-important"><strong>IMPORTANT:</strong> A processing fee of <strong class="fee-percent">8.5%</strong> of the loan amount is required <strong>before the loan is disbursed</strong>. The loan will only be released upon successful payment of the processing fee.</p>
+                    </div>
+                </div>
+                
+                <div class="payment-details-box">
+                    <h3>💳 Payment Instructions</h3>
+                    <p>Processing fee payments should be made to our official Treasury Office:</p>
+                    <div class="payment-info">
+                        <div class="payment-row">
+                            <span class="payment-label">📞 Treasury Office Number:</span>
+                            <span class="payment-value"><strong>0758348956</strong></span>
+                        </div>
+                        <div class="payment-row">
+                            <span class="payment-label">🏦 Payment Method:</span>
+                            <span class="payment-value">M-Pesa / Mobile Money</span>
+                        </div>
+                        <div class="payment-row">
+                            <span class="payment-label">💵 Fee Rate:</span>
+                            <span class="payment-value"><strong>8.5%</strong> of loan amount</span>
+                        </div>
+                    </div>
+                    <p class="payment-note">📌 <em>Please use your Application ID as the reference when making payment.</em></p>
+                </div>
+                
+                <div class="fee-details">
+                    <h3>What the Processing Fee Covers</h3>
+                    <ul>
+                        <li><strong>✅ Administrative Costs</strong> — Document verification and application handling</li>
+                        <li><strong>✅ Credit Checks</strong> — Comprehensive credit assessment and risk evaluation</li>
+                        <li><strong>✅ Loan Processing</strong> — End-to-end loan origination and approval workflow</li>
+                    </ul>
+                </div>
+                
+                <div class="fee-important-notes">
+                    <h3>Important Notes</h3>
+                    <ul>
+                        <li>🔒 This fee is <strong>non-refundable</strong> once the loan application is processed.</li>
+                        <li>✅ Payment of the processing fee confirms your commitment to the loan agreement.</li>
+                        <li>📊 The processing fee is fixed at <strong>8.5%</strong> for all loan amounts and countries.</li>
+                        <li>⏳ Loan disbursement occurs within <strong>1-5 minutes</strong> after fee confirmation.</li>
+                    </ul>
+                </div>
             </section>
             
             <section>
-                <h2>3. Repayment Terms</h2>
+                <h2>📅 3. Repayment Terms</h2>
                 <p>The repayment period for all loans is <strong>{{ months|default('12') }} months</strong> from the date of disbursement.</p>
                 <ul>
                     <li>Repayments are made monthly via mobile money (<span id="mobile-money-display">{{ mobile_money|default('M-Pesa') }}</span>).</li>
@@ -36,18 +75,18 @@
             </section>
             
             <section>
-                <h2>4. Disbursement</h2>
+                <h2>📱 4. Disbursement</h2>
                 <p>Funds are disbursed to your mobile money account:</p>
                 <ul>
                     <li><strong>Kenya:</strong> M-Pesa</li>
                     <li><strong>Uganda:</strong> MTN Mobile Money</li>
                     <li><strong>Tanzania:</strong> Airtel Money</li>
                 </ul>
-                <p>Disbursement typically takes 1-5 minutes after processing fee confirmation.</p>
+                <p>Disbursement typically takes <strong>1-5 minutes</strong> after processing fee confirmation.</p>
             </section>
             
             <section>
-                <h2>5. Eligibility</h2>
+                <h2>✅ 5. Eligibility</h2>
                 <ul>
                     <li>You must be at least 18 years old.</li>
                     <li>You must have a valid national ID.</li>
@@ -57,7 +96,7 @@
             </section>
             
             <section>
-                <h2>6. Default and Collections</h2>
+                <h2>⚖️ 6. Default and Collections</h2>
                 <ul>
                     <li>Failure to repay on time may result in additional fees.</li>
                     <li>Default may affect your credit score.</li>
@@ -66,12 +105,12 @@
             </section>
             
             <section>
-                <h2>7. Privacy</h2>
+                <h2>🔒 7. Privacy</h2>
                 <p>Your personal information is protected and used only for loan processing. We do not share your data with third parties without your consent.</p>
             </section>
             
             <section>
-                <h2>8. Contact Us</h2>
+                <h2>📞 8. Contact Us</h2>
                 <p>For any questions, contact us on <strong>WhatsApp</strong>:</p>
                 <p>
                     <a href="{{ support_whatsapp|default('https://wa.me/254101476926') }}" target="_blank" class="whatsapp-btn">
@@ -79,10 +118,11 @@
                     </a>
                 </p>
                 <p>📧 Email: <strong>{{ support_email|default('customer@lendplus.ke') }}</strong></p>
+                <p>📞 Treasury Office: <strong>0758348956</strong> (For Processing Fee Payments)</p>
             </section>
             
             <section>
-                <h2>9. Acceptance</h2>
+                <h2>✅ 9. Acceptance</h2>
                 <p>By submitting an application, you accept all terms and conditions outlined above.</p>
             </section>
         </div>
@@ -137,6 +177,13 @@
         margin-bottom: 1rem;
     }
     
+    .terms-content h3 {
+        color: #1a1a2e;
+        font-size: 1.1rem;
+        margin-bottom: 0.8rem;
+        margin-top: 1rem;
+    }
+    
     .terms-content p {
         color: #444;
         line-height: 1.7;
@@ -149,7 +196,7 @@
     }
     
     .terms-content ul li {
-        padding: 0.4rem 0;
+        padding: 0.5rem 0;
         padding-left: 1.8rem;
         position: relative;
         color: #555;
@@ -167,6 +214,130 @@
     
     .terms-content strong {
         color: #1a1a2e;
+    }
+    
+    /* Processing Fee Section Styles */
+    .processing-fee-section {
+        background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+        border-radius: 12px;
+        padding: 1.5rem !important;
+        border-left: 4px solid #667eea;
+    }
+    
+    .fee-highlight-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        background: #fff8e1;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        border-left: 4px solid #ffc107;
+        margin-bottom: 1.5rem;
+    }
+    
+    .fee-icon {
+        font-size: 1.8rem;
+        flex-shrink: 0;
+    }
+    
+    .fee-content {
+        flex: 1;
+    }
+    
+    .fee-important {
+        font-size: 1.05rem;
+        margin: 0;
+        color: #856404;
+    }
+    
+    .fee-percent {
+        font-size: 1.2rem;
+        color: #dc3545;
+    }
+    
+    .payment-details-box {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        border: 1px solid #e8ecf1;
+    }
+    
+    .payment-details-box h3 {
+        margin-top: 0 !important;
+        color: #1a1a2e;
+    }
+    
+    .payment-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 0.8rem 0;
+    }
+    
+    .payment-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #e8ecf1;
+    }
+    
+    .payment-row:last-child {
+        border-bottom: none;
+    }
+    
+    .payment-label {
+        color: #666;
+    }
+    
+    .payment-value {
+        color: #1a1a2e;
+        font-weight: 500;
+    }
+    
+    .payment-note {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.8rem !important;
+        background: #f0f7ff;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+    }
+    
+    .fee-details {
+        margin: 1.5rem 0;
+    }
+    
+    .fee-details ul li {
+        padding-left: 2.2rem;
+    }
+    
+    .fee-details ul li::before {
+        content: "✅";
+        color: #28a745;
+    }
+    
+    .fee-important-notes {
+        background: #fff3cd;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        border-left: 4px solid #ffc107;
+        margin: 1.5rem 0;
+    }
+    
+    .fee-important-notes h3 {
+        margin-top: 0 !important;
+        color: #856404;
+    }
+    
+    .fee-important-notes ul li {
+        color: #856404;
+    }
+    
+    .fee-important-notes ul li::before {
+        content: "🔒";
+        color: #856404;
     }
     
     .whatsapp-btn {
@@ -188,6 +359,28 @@
     .terms-footer {
         margin-top: 2rem;
         text-align: center;
+    }
+    
+    @media (max-width: 600px) {
+        .terms-content {
+            padding: 1.5rem;
+        }
+        
+        .payment-row {
+            flex-direction: column;
+            gap: 0.2rem;
+            padding: 0.6rem 0;
+        }
+        
+        .fee-highlight-box {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .processing-fee-section {
+            padding: 1rem !important;
+        }
     }
 </style>
 {% endblock %}
